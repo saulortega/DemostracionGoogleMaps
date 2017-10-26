@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+		<script src="./js/vue.min.js"></script>
+
+		<title>Demostración de la API de Google Maps</title>
+
+		<style>
+			html, body {
+				font-family: Arial, sans-serif;
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+
+			#mapa {
+				height: 100%;
+				width: 60%
+			}
+		</style>
+
+	</head>
+	<body>
+
+
+		<div id="tabla" style="float: left; width: 40%">
+			<table class="table table-stripped">
+				<thead v-if="ubicaciones.length > 0">
+					<tr>
+						<th style="width: 30%;">Nombre</th>
+						<th style="width: 30%;">Latitud</th>
+						<th style="width: 30%;">Longitud</th>
+						<th style="width: 10%;"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr v-for="(u, i) in ubicaciones">
+						<td style="width: 30%;">{{u.txt}}</td>
+						<td style="width: 30%;">{{u.marcador.position.lat()}}</td>
+						<td style="width: 30%;">{{u.marcador.position.lng()}}</td>
+						<td style="width: 10%;"><span title="Eliminar" style="color: red; cursor: pointer;" v-on:click="borrarMarcador(i)">✗</span></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<div>
+				<hr>
+				<p>Pulse sobre un lugar en el mapa y dele un nombre a la ubicación para guardarlo.</p>
+				<div class="text-center">
+					<input v-model="ubicacionNueva.txt" type="text" placeholder="Nombre de ubicación">
+					<br><br>
+					<input type="button" value="Confirmar" v-on:click="enviarUbicacion">
+					<input type="button" value="Cancelar" v-on:click="borrarUbicacion">
+					<p v-if="ubicacionNueva.lat && ubicacionNueva.lon">
+						Coordenadas: {{ubicacionNueva.lat}}, {{ubicacionNueva.lon}}
+					</p>
+				</div>
+			</div>
+					
+		</div>
+		<div id="mapa"></div>
+
+		<script type="text/javascript">
+
+
+			var mapa;
+			var marcadores = [];
+
+			function iniciarMapa() {
+				mapa = new google.maps.Map(document.getElementById('mapa'), {
+					center: {lat: 4.629425, lng: -74.0900203},
+					zoom: 13,
+					mapTypeControl: false,
+				});
+
+				mapa.addListener('click', function(e) {
+				  nuevoMarcador(e.latLng, mapa);
+				});
+			}
+
+
+
+			const app = new Vue({
+				data: {
+					ubicaciones: [],
+					ubicacionNueva: {
+						txt: null,
+						lat: null,
+						lon: null,
+					},
+					marcador: null
+				},
+				methods: {
+					enviarUbicacion: function(){
+						if(!this.ubicacionNueva.txt){
+							alert('Escriba el nombre de la ubicación')
+							return
+						}
+						if(!this.ubicacionNueva.lat || !this.ubicacionNueva.lon){
+							alert('Seleccione una ubicación')
+							return
+						}
+						this.ubicaciones.push({
+							txt: this.ubicacionNueva.txt,
+							marcador: this.marcador, 
+						});
+						this.ubicacionNueva.txt = null
+						this.ubicacionNueva.lat = null
+						this.ubicacionNueva.lon = null
+						this.marcador = null
+					},
+					borrarUbicacion: function(){
+						this.ubicacionNueva.txt = null
+						this.ubicacionNueva.lat = null
+						this.ubicacionNueva.lon = null
+						if(this.marcador){
+							this.marcador.setMap(null)
+						}
+					},
+					borrarMarcador: function(i){
+						this.ubicaciones[i].marcador.setMap(null);
+						this.ubicaciones.splice(i, 1);
+					}
+				}
+			}).$mount('#tabla')
+
+
+
+			function nuevoMarcador(l, mapa) {
+				app.ubicacionNueva.lat = null
+				app.ubicacionNueva.lon = null
+				if(app.marcador){
+					app.marcador.setMap(null)
+				}
+				//
+				app.ubicacionNueva.lat = l.lat()
+				app.ubicacionNueva.lon = l.lng()
+				app.marcador = new google.maps.Marker({
+					position: l, 
+					map: mapa,
+					draggable: true,
+				});
+			}
+
+			//libraries=drawing&
+
+		</script>
+
+		<script async defer src="https://maps.googleapis.com/maps/api/js?v=3&key=AIzaSyDwQ00z6GFUwxWiSGTbVogFH3bPOQfHlqA&callback=iniciarMapa"></script>
+
+	</body>
+</html>
